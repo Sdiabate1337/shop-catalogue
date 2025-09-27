@@ -1,30 +1,111 @@
 "use client"
 
-import { useState } from "react"
-import { createClient } from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShoppingBag } from "@/components/icons"
-import Link from "next/link"
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ShoppingBag } from 'lucide-react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 export default function SignIn() {
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
+
+  useEffect(() => {
+    // Vérifier si on a des tokens dans l'URL (retour de Google OAuth)
+    if (window.location.hash.includes('access_token=')) {
+      console.log('🎯 Tokens détectés dans l\'URL de signin - traitement automatique')
+      handleAuthCallback()
+    }
+  }, [])
+
+  const handleAuthCallback = async () => {
+    try {
+      console.log('🔍 Traitement des tokens OAuth...')
+      
+      // Attendre que Supabase traite les tokens
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const { data: { session }, error } = await supabase.auth.getSession()
+      
+      if (error) {
+        console.error('❌ Erreur lors de la récupération de session:', error)
+        return
+      }
+
+      if (session) {
+        console.log('✅ Session créée:', session.user.email)
+        
+        // Vérifier si l'utilisateur existe dans la base
+        const { data: vendeur, error: vendeurError } = await supabase
+          .from('vendeurs')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single()
+        
+        if (vendeurError || !vendeur) {
+          console.log('👤 Nouvel utilisateur - redirection vers onboarding')
+          window.location.href = '/onboarding'
+        } else {
+          console.log('🏪 Utilisateur existant - redirection vers dashboard')
+          window.location.href = '/dashboard'
+        }
+        
+        // Nettoyer l'URL
+        window.history.replaceState({}, document.title, '/auth/signin')
+      }
+    } catch (error) {
+      console.error('💥 Erreur dans handleAuthCallback:', error)
+    }
+  }
 
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true)
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('🚀 Début de l\'authentification Google')
+      
+      // Vérifier la configuration
+      console.log('📋 Configuration Supabase:')
+      console.log('URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Définie' : '❌ Manquante')
+      console.log('Key:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Définie' : '❌ Manquante')
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       })
-      if (error) throw error
-    } catch (error) {
-      console.error('Error signing in:', error)
-    } finally {
+      
+      
+      console.log('📡 Réponse Supabase:', { data, error })
+      
+      if (error) {
+        console.error('❌ Erreur Supabase:', error)
+        throw error
+      }
+      
+      if (data?.url) {
+        console.log('🔗 Redirection vers:', data.url)
+        window.location.href = data.url
+      } else {
+        throw new Error('URL de redirection manquante')
+      }
+      
+    } catch (error: any) {
+      console.error('💥 Erreur:', error)
       setLoading(false)
+      
+      // Messages d'erreur détaillés
+      if (error.message?.includes('Invalid API key')) {
+        alert('❌ Clé API Supabase invalide. Vérifiez votre .env')
+      } else if (error.message?.includes('Invalid URL')) {
+        alert('❌ URL Supabase invalide. Vérifiez votre .env')
+      } else {
+        alert(`❌ Erreur: ${error.message || 'Problème de connexion'}`)
+      }
     }
   }
 

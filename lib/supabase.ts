@@ -1,31 +1,33 @@
-// Temporary mock implementation until Supabase is properly installed
-export const createClient = () => ({
-  auth: {
-    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-    signInWithOAuth: (options: any) => Promise.resolve({ error: null }),
-    signOut: () => Promise.resolve({ error: null }),
-    exchangeCodeForSession: (code: string) => Promise.resolve({ error: null })
-  },
-  from: (table: string) => ({
-    select: (columns?: string) => ({
-      eq: (column: string, value: any) => ({
-        single: () => Promise.resolve({ data: null, error: null }),
-        order: (column: string, options?: any) => Promise.resolve({ data: [], error: null })
-      }),
-      single: () => Promise.resolve({ data: null, error: null })
-    }),
-    insert: (data: any) => ({
-      select: (columns?: string) => ({
-        single: () => Promise.resolve({ data: null, error: null })
-      })
-    }),
-    delete: () => ({
-      eq: (column: string, value: any) => Promise.resolve({ error: null })
-    })
-  })
-})
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-export const createServerClient = () => createClient()
+// Configuration Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+// Vérification des variables d'environnement
+if (!supabaseUrl) {
+  console.error('❌ NEXT_PUBLIC_SUPABASE_URL manquante dans .env')
+}
+
+if (!supabaseAnonKey) {
+  console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY manquante dans .env')
+}
+
+// Création du client Supabase
+export const supabase = createSupabaseClient(
+  supabaseUrl || '',
+  supabaseAnonKey || '',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
+)
+
+// Fonction helper pour créer le client (compatibilité)
+export const createClient = () => supabase
 
 export type Database = {
   public: {

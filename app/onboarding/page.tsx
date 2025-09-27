@@ -52,37 +52,62 @@ export default function Onboarding() {
 
       const slug = generateSlug(formData.nomBoutique)
 
+      console.log('🔍 Données utilisateur:', user)
+      console.log('📝 Données du formulaire:', formData)
+      console.log('🏷️ Slug généré:', slug)
+
       // Créer le vendeur
+      console.log('👤 Création du vendeur...')
       const vendeurResponse = await supabase
         .from('vendeurs')
         .insert({
           nom_boutique: formData.nomBoutique,
           devise: formData.devise,
           whatsapp: formData.whatsapp,
-          user_id: (user as any).id
+          user_id: user.id
         })
         .select()
         .single()
 
-      if (vendeurResponse.error) throw vendeurResponse.error
+      console.log('📡 Réponse vendeur:', vendeurResponse)
 
-      const vendeur = vendeurResponse.data as any
+      if (vendeurResponse.error) {
+        console.error('❌ Erreur vendeur:', vendeurResponse.error)
+        throw vendeurResponse.error
+      }
+
+      const vendeur = vendeurResponse.data
       if (!vendeur) throw new Error('Erreur lors de la création du vendeur')
 
+      console.log('✅ Vendeur créé:', vendeur)
+
       // Créer le catalogue
+      console.log('📚 Création du catalogue...')
       const catalogueResponse = await supabase
         .from('catalogues')
         .insert({
           vendeur_id: vendeur.id,
           slug: slug
-        }) as any
+        })
+        .select()
+        .single()
 
-      if (catalogueResponse.error) throw catalogueResponse.error
+      console.log('📡 Réponse catalogue:', catalogueResponse)
+
+      if (catalogueResponse.error) {
+        console.error('❌ Erreur catalogue:', catalogueResponse.error)
+        throw catalogueResponse.error
+      }
+
+      console.log('✅ Catalogue créé:', catalogueResponse.data)
 
       router.push('/dashboard')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la création:', error)
-      alert('Une erreur est survenue. Veuillez réessayer.')
+      console.error('Message d\'erreur:', error?.message)
+      console.error('Détails de l\'erreur:', error?.details)
+      console.error('Code d\'erreur:', error?.code)
+      alert(`Erreur: ${error?.message || 'Une erreur est survenue. Veuillez réessayer.'}`)
     } finally {
       setLoading(false)
     }
