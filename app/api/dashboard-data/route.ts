@@ -56,17 +56,28 @@ export async function GET(request: NextRequest) {
       .eq('vendeur_id', vendeur.id)
       .single()
 
-    // Récupérer les produits si catalogue existe
+    // Récupérer les produits avec leurs images si catalogue existe
     let produits = []
     if (catalogue && !catalogueError) {
       const { data: produitsData, error: produitsError } = await supabaseAdmin
         .from('produits')
-        .select('*')
+        .select(`
+          *,
+          images:images_produit(
+            id,
+            image_url,
+            ordre
+          )
+        `)
         .eq('catalogue_id', catalogue.id)
         .order('created_at', { ascending: false })
 
       if (!produitsError && produitsData) {
-        produits = produitsData
+        // Trier les images par ordre pour chaque produit
+        produits = produitsData.map(produit => ({
+          ...produit,
+          images: produit.images?.sort((a: any, b: any) => a.ordre - b.ordre) || []
+        }))
       }
     }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -39,6 +39,13 @@ interface Produit {
   prix: number
   image_url: string
   visible: boolean
+  images?: ImageProduit[]
+}
+
+interface ImageProduit {
+  id: string
+  image_url: string
+  ordre: number
 }
 
 export default function Dashboard() {
@@ -57,29 +64,29 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [editingProduct, setEditingProduct] = useState<Produit | null>(null)
-  const [editForm, setEditForm] = useState<{ nom: string; description: string; prix: string; imageFile: File | null; imagePreview: string }>({
+  const [editForm, setEditForm] = useState<{
+    nom: string;
+    description: string;
+    prix: string;
+    imageFiles: File[];
+    imagePreviews: string[];
+  }>({
     nom: '',
     description: '',
     prix: '',
-    imageFile: null,
-    imagePreview: ''
+    imageFiles: [],
+    imagePreviews: []
   })
   const [editUploading, setEditUploading] = useState(false)
   const [editUploadProgress, setEditUploadProgress] = useState(0)
   const [productToDelete, setProductToDelete] = useState<Produit | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [newProduct, setNewProduct] = useState<{
-    nom: string
-    description: string
-    prix: string
-    imageFile: File | null
-    imagePreview: string
-  }>({
+  const [newProduct, setNewProduct] = useState({
     nom: '',
     description: '',
     prix: '',
-    imageFile: null,
-    imagePreview: ''
+    imageFiles: [] as File[],
+    imagePreviews: [] as string[]
   })
   const router = useRouter()
   const { toast } = useToast()
@@ -176,6 +183,39 @@ export default function Dashboard() {
     })
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const newFiles = Array.from(files)
+    const newPreviews: string[] = []
+
+    newFiles.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          newPreviews.push(e.target.result as string)
+          if (newPreviews.length === newFiles.length) {
+            setNewProduct(prev => ({
+              ...prev,
+              imageFiles: [...prev.imageFiles, ...newFiles],
+              imagePreviews: [...prev.imagePreviews, ...newPreviews]
+            }))
+          }
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const removeImage = (index: number) => {
+    setNewProduct(prev => ({
+      ...prev,
+      imageFiles: prev.imageFiles.filter((_, i) => i !== index),
+      imagePreviews: prev.imagePreviews.filter((_, i) => i !== index)
+    }))
+  }
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!catalogue) return
@@ -188,60 +228,44 @@ export default function Dashboard() {
         throw new Error(`Initialisation du stockage échouée: ${msg || initRes.status}`)
       }
 
-      // Uploader l'image si présente
-      let imageUrl: string | null = null
-      if (newProduct.imageFile) {
-        const file = newProduct.imageFile
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-        const filePath = `${catalogue.id}/${Date.now()}.${ext}`
+      setUploading(true)
+      setUploadProgress(0)
 
-        // Récupérer le token utilisateur pour uploader via XHR avec suivi de progression
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) throw new Error('Session manquante pour l’upload')
+      // Uploader toutes les images
+      const imageUrls: string[] = []
+      if (newProduct.imageFiles.length > 0) {
+        for (let i = 0; i < newProduct.imageFiles.length; i++) {
+          const file = newProduct.imageFiles[i]
+          const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+          const filePath = `${catalogue.id}/${Date.now()}-${i}.${ext}`
 
-        const uploadUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/products/${filePath}`
+          // Upload avec Supabase client
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            })
 
-        setUploading(true)
-        setUploadProgress(0)
-
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest()
-          xhr.open('POST', uploadUrl)
-          xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`)
-          xhr.setRequestHeader('x-upsert', 'false')
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              const percent = Math.round((e.loaded / e.total) * 100)
-              setUploadProgress(percent)
-            }
+          if (uploadError) {
+            console.error('Erreur upload Supabase:', uploadError)
+            throw new Error(`Upload échoué: ${uploadError.message}`)
           }
-          xhr.onerror = () => reject(new Error('Erreur réseau pendant l’upload'))
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve()
-            } else {
-              reject(new Error(`Upload échoué (${xhr.status})`))
-            }
-          }
-          xhr.send(file)
-        })
 
-        // Comme le bucket est public, on peut fabriquer l’URL publique directe
-        imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products/${filePath}`
+          // Mise à jour du progrès
+          const progress = Math.round(((i + 1) / newProduct.imageFiles.length) * 100)
+          setUploadProgress(progress)
 
-        // Vérifier l'accessibilité publique de l'image (HEAD)
-        try {
-          const headRes = await fetch(imageUrl, { method: 'HEAD' })
-          if (!headRes.ok) {
-            console.warn('⚠️ Image non accessible publiquement', { status: headRes.status, imageUrl })
-            throw new Error(`Image non accessible (status ${headRes.status}). Vérifiez que le bucket est public et que les policies SELECT existent.`)
-          }
-        } catch (e) {
-          console.error('HEAD check failed for image URL', imageUrl, e)
-          throw e
+          // Construire l'URL publique
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(filePath)
+
+          imageUrls.push(publicUrl)
         }
       }
 
+      // Créer le produit
       const insertResponse = await supabase
         .from('produits')
         .insert({
@@ -249,12 +273,30 @@ export default function Dashboard() {
           nom: newProduct.nom,
           description: newProduct.description,
           prix: parseFloat(newProduct.prix),
-          image_url: imageUrl
+          image_url: imageUrls.length > 0 ? imageUrls[0] : null // Image principale pour compatibilité
         })
+        .select()
 
       if ('error' in insertResponse && insertResponse.error) throw insertResponse.error
+      
+      const produit = insertResponse.data[0]
 
-      setNewProduct({ nom: '', description: '', prix: '', imageFile: null, imagePreview: '' })
+      // Sauvegarder toutes les images dans la table images_produit
+      if (imageUrls.length > 0) {
+        const imagesData = imageUrls.map((url, index) => ({
+          produit_id: produit.id,
+          image_url: url,
+          ordre: index
+        }))
+
+        const { error: imagesError } = await supabase
+          .from('images_produit')
+          .insert(imagesData)
+
+        if (imagesError) throw imagesError
+      }
+
+      setNewProduct({ nom: '', description: '', prix: '', imageFiles: [], imagePreviews: [] })
       setUploadProgress(0)
       setUploading(false)
       setShowAddProduct(false)
@@ -318,14 +360,35 @@ export default function Dashboard() {
   }
 
   // Edition de produit
-  const openEditProduct = (p: Produit) => {
+  const openEditProduct = async (p: Produit) => {
     setEditingProduct(p)
+    
+    // Charger toutes les images du produit depuis la table images_produit
+    const { data: productImages, error } = await supabase
+      .from('images_produit')
+      .select('image_url')
+      .eq('produit_id', p.id)
+      .order('ordre', { ascending: true })
+
+    let existingImages: string[] = []
+    if (error) {
+      console.error('Erreur lors du chargement des images:', error)
+      // Fallback sur l'image principale si erreur
+      existingImages = p.image_url ? [p.image_url] : []
+    } else {
+      existingImages = productImages?.map(img => img.image_url) || []
+      // Si aucune image dans images_produit, utiliser l'image principale
+      if (existingImages.length === 0 && p.image_url) {
+        existingImages = [p.image_url]
+      }
+    }
+
     setEditForm({
       nom: p.nom,
       description: p.description || '',
       prix: String(p.prix ?? ''),
-      imageFile: null,
-      imagePreview: p.image_url || ''
+      imageFiles: [],
+      imagePreviews: existingImages
     })
   }
 
@@ -355,47 +418,86 @@ export default function Dashboard() {
         throw new Error(`Initialisation du stockage échouée: ${msg || initRes.status}`)
       }
 
-      let imageUrl: string | null = editingProduct.image_url || null
-      if (editForm.imageFile) {
-        const file = editForm.imageFile
-        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-        const filePath = `${catalogue.id}/${editingProduct.id}-${Date.now()}.${ext}`
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) throw new Error('Session manquante pour l\'upload')
-        const uploadUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/products/${filePath}`
+      setEditUploading(true)
+      setEditUploadProgress(0)
 
-        setEditUploading(true)
-        setEditUploadProgress(0)
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest()
-          xhr.open('POST', uploadUrl)
-          xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`)
-          xhr.setRequestHeader('x-upsert', 'false')
-          xhr.upload.onprogress = (ev) => {
-            if (ev.lengthComputable) setEditUploadProgress(Math.round((ev.loaded / ev.total) * 100))
+      // Uploader les nouvelles images
+      const newImageUrls: string[] = []
+      if (editForm.imageFiles.length > 0) {
+        for (let i = 0; i < editForm.imageFiles.length; i++) {
+          const file = editForm.imageFiles[i]
+          const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+          const filePath = `${catalogue.id}/${editingProduct.id}-${Date.now()}-${i}.${ext}`
+
+          // Upload avec Supabase client
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            })
+
+          if (uploadError) {
+            console.error('Erreur upload Supabase:', uploadError)
+            throw new Error(`Upload échoué: ${uploadError.message}`)
           }
-          xhr.onerror = () => reject(new Error('Erreur réseau pendant l\'upload'))
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) resolve()
-            else reject(new Error(`Upload échoué (${xhr.status})`))
-          }
-          xhr.send(file)
-        })
-        imageUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/products/${filePath}`
-        const headRes = await fetch(imageUrl, { method: 'HEAD' })
-        if (!headRes.ok) throw new Error(`Image non accessible (status ${headRes.status})`)
+
+          // Mise à jour du progrès
+          const progress = Math.round(((i + 1) / editForm.imageFiles.length) * 100)
+          setEditUploadProgress(progress)
+
+          // Construire l'URL publique
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(filePath)
+
+          newImageUrls.push(publicUrl)
+        }
       }
 
+      // Déterminer l'image principale (première nouvelle image ou garder l'existante)
+      let mainImageUrl = editingProduct.image_url
+      if (newImageUrls.length > 0) {
+        mainImageUrl = newImageUrls[0]
+      }
+
+      // Mettre à jour le produit
       const { error: updateErr } = await supabase
         .from('produits')
         .update({
           nom: editForm.nom,
           description: editForm.description,
           prix: parseFloat(editForm.prix),
-          image_url: imageUrl
+          image_url: mainImageUrl
         })
         .eq('id', editingProduct.id)
+
       if (updateErr) throw updateErr
+
+      // Ajouter les nouvelles images à la table images_produit
+      if (newImageUrls.length > 0) {
+        // Récupérer le nombre d'images existantes pour définir l'ordre
+        const { data: existingImages } = await supabase
+          .from('images_produit')
+          .select('ordre')
+          .eq('produit_id', editingProduct.id)
+          .order('ordre', { ascending: false })
+          .limit(1)
+
+        const startOrder = existingImages && existingImages.length > 0 ? existingImages[0].ordre + 1 : 0
+
+        const imagesData = newImageUrls.map((url, index) => ({
+          produit_id: editingProduct.id,
+          image_url: url,
+          ordre: startOrder + index
+        }))
+
+        const { error: imagesError } = await supabase
+          .from('images_produit')
+          .insert(imagesData)
+
+        if (imagesError) throw imagesError
+      }
 
       setEditingProduct(null)
       setEditUploading(false)
@@ -483,11 +585,11 @@ export default function Dashboard() {
         if (catalogueError) throw catalogueError
         
         // Mettre à jour l'état local du catalogue
-        setCatalogue(prev => prev ? { ...prev, slug: newSlug } : null)
+        setCatalogue((prev: Catalogue | null) => prev ? { ...prev, slug: newSlug } : null)
       }
       
       // Mettre à jour l'état local du vendeur
-      setVendeur(prev => prev ? { ...prev, nom_boutique: data.nomBoutique, devise: data.devise, whatsapp: data.whatsapp } : null)
+      setVendeur((prev: Vendeur | null) => prev ? { ...prev, nom_boutique: data.nomBoutique, devise: data.devise, whatsapp: data.whatsapp } : null)
       setShowEditProfile(false)
       
       console.log('✅ Profil et slug mis à jour')
@@ -689,14 +791,17 @@ export default function Dashboard() {
                     <div>
                       <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Lien de votre boutique</p>
                       <p className="font-mono text-lg font-bold text-gray-900 dark:text-white">
-                        shopshap.africa/{catalogue.slug}
+                        {typeof window !== 'undefined' ? window.location.host : 'shopshap.africa'}/{catalogue.slug}
                       </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      onClick={() => window.open(`https://shopshap.africa/${catalogue.slug}`, '_blank')}
+                      onClick={() => {
+                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://shopshap.africa'
+                        window.open(`${baseUrl}/${catalogue.slug}`, '_blank')
+                      }}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -780,26 +885,34 @@ export default function Dashboard() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="image_file" className="text-sm font-medium text-gray-700 dark:text-gray-300">Image du produit</Label>
-                    <Input
-                      id="image_file"
+                    <Label htmlFor="image" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Image du produit
+                    </Label>
+                    <input
+                      id="image"
                       type="file"
                       accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null
-                        setNewProduct(prev => ({
-                          ...prev,
-                          imageFile: file,
-                          imagePreview: file ? URL.createObjectURL(file) : ''
-                        }))
-                      }}
-                      className="mt-1 rounded-xl"
+                      onChange={handleImageChange}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300"
                     />
-                    {newProduct.imagePreview && (
-                      <div className="mt-3 flex items-center gap-4">
-                        <img src={newProduct.imagePreview} alt="Prévisualisation" className="h-28 w-28 object-cover rounded-xl border" />
+                    {newProduct.imagePreviews && newProduct.imagePreviews.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {newProduct.imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative">
+                            <img src={preview} alt={`Prévisualisation ${index + 1}`} className="h-28 w-28 object-cover rounded-xl border" />
+                            <Button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 p-0"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
                         {uploading && (
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-[200px]">
                             <div className="flex justify-between mb-1">
                               <span className="text-xs text-gray-600 dark:text-gray-300">Upload en cours</span>
                               <span className="text-xs font-medium text-gray-900 dark:text-white">{uploadProgress}%</span>
@@ -1030,30 +1143,88 @@ export default function Dashboard() {
                         accept="image/*" 
                         className="mt-2 rounded-xl h-12 text-base" 
                         onChange={(e)=>{
-                          const file = e.target.files?.[0] || null
-                          setEditForm(prev=>({
-                            ...prev,
-                            imageFile: file,
-                            imagePreview: file ? URL.createObjectURL(file) : prev.imagePreview
-                          }))
+                          const files = Array.from(e.target.files || [])
+                          if (files.length > 0) {
+                            const newPreviews = files.map(file => URL.createObjectURL(file))
+                            setEditForm(prev=>({
+                              ...prev,
+                              imageFiles: files,
+                              imagePreviews: newPreviews
+                            }))
+                          }
                         }} 
+                        multiple
                       />
-                      {editForm.imagePreview && (
+                      {editForm.imagePreviews && editForm.imagePreviews.length > 0 && (
                         <div className="mt-4">
-                          <div className="flex items-center gap-4">
-                            <img src={editForm.imagePreview} alt="Prévisualisation" className="h-32 w-32 object-cover rounded-xl border shadow-sm" />
-                            {editUploading && (
-                              <div className="flex-1">
-                                <div className="flex justify-between mb-2">
-                                  <span className="text-sm text-gray-600 dark:text-gray-300">Upload en cours</span>
-                                  <span className="text-sm font-medium text-gray-900 dark:text-white">{editUploadProgress}%</span>
-                                </div>
-                                <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                  <div className="h-3 bg-blue-600 dark:bg-blue-500 transition-all duration-300" style={{ width: `${editUploadProgress}%` }} />
-                                </div>
+                          <div className="flex flex-wrap gap-3">
+                            {editForm.imagePreviews.map((preview, index) => (
+                              <div key={index} className="relative">
+                                <img src={preview} alt={`Prévisualisation ${index + 1}`} className="h-32 w-32 object-cover rounded-xl border shadow-sm" />
+                                <Button
+                                  type="button"
+                                  onClick={async () => {
+                                    const imageUrl = preview
+                                    
+                                    // Si c'est une image existante (pas un blob local), la supprimer de la base
+                                    if (!imageUrl.startsWith('blob:') && editingProduct) {
+                                      try {
+                                        // Supprimer de la table images_produit
+                                        const { error } = await supabase
+                                          .from('images_produit')
+                                          .delete()
+                                          .eq('produit_id', editingProduct.id)
+                                          .eq('image_url', imageUrl)
+                                        
+                                        if (error) {
+                                          console.error('Erreur suppression image:', error)
+                                          alert('Erreur lors de la suppression de l\'image')
+                                          return
+                                        }
+
+                                        // Supprimer du storage si c'est une image Supabase
+                                        if (imageUrl.includes('/storage/v1/object/public/products/')) {
+                                          const imagePath = imageUrl.split('/storage/v1/object/public/products/')[1]
+                                          if (imagePath) {
+                                            await supabase.storage
+                                              .from('products')
+                                              .remove([imagePath])
+                                          }
+                                        }
+                                      } catch (error) {
+                                        console.error('Erreur:', error)
+                                        alert('Erreur lors de la suppression')
+                                        return
+                                      }
+                                    }
+                                    
+                                    // Retirer de l'interface
+                                    setEditForm(prev => ({
+                                      ...prev,
+                                      imageFiles: prev.imageFiles.filter((_, i) => i !== index),
+                                      imagePreviews: prev.imagePreviews.filter((_, i) => i !== index)
+                                    }))
+                                  }}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 p-0"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
                               </div>
-                            )}
+                            ))}
                           </div>
+                          {editUploading && (
+                            <div className="mt-4">
+                              <div className="flex justify-between mb-2">
+                                <span className="text-sm text-gray-600 dark:text-gray-300">Upload en cours</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-white">{editUploadProgress}%</span>
+                              </div>
+                              <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div className="h-3 bg-blue-600 dark:bg-blue-500 transition-all duration-300" style={{ width: `${editUploadProgress}%` }} />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

@@ -199,7 +199,7 @@ export default function Onboarding() {
                   <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
                     <span className="flex items-center gap-2">
                       <Globe className="w-4 h-4" />
-                      Votre lien: <span className="font-mono">shopshap.africa/{generateSlug(formData.nomBoutique)}</span>
+                      Votre lien: <span className="font-mono">{typeof window !== 'undefined' ? window.location.host : 'shopshap.africa'}/{generateSlug(formData.nomBoutique)}</span>
                     </span>
                   </p>
                 </div>

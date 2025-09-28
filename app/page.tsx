@@ -173,7 +173,7 @@ export default function Home() {
                   Lien unique
                 </h3>
                 <div className="mb-4">
-                  <span className="text-xs lg:text-sm font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-gray-600 dark:text-gray-400">shopshap.africa/vous</span>
+                  <span className="text-xs lg:text-sm font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-gray-600 dark:text-gray-400">{typeof window !== 'undefined' ? window.location.host : 'shopshap.africa'}/vous</span>
                 </div>
                 <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
                   Partagez facilement votre boutique sur TikTok, WhatsApp et réseaux sociaux.
