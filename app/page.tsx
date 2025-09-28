@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShoppingBag, Smartphone, Globe, Sparkles, ArrowRight, CheckCircle, TrendingUp } from "@/components/icons";
+import { ShoppingBag, Smartphone, Globe, Sparkles, ArrowRight, CheckCircle, TrendingUp, Users, Clock, Gift, Zap } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
@@ -32,12 +32,20 @@ export default function Home() {
             <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
               <ThemeToggle />
             </div>
-            <Link 
-              href="/auth/signin" 
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2.5 lg:px-8 lg:py-3 rounded-full text-sm lg:text-base font-semibold transition-colors"
-            >
-              Connexion
-            </Link>
+<div className="flex items-center gap-3">
+              <Link 
+                href="#features" 
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors hidden lg:block"
+              >
+                Voir un exemple
+              </Link>
+              <Link 
+                href="/auth/signin" 
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-2.5 lg:px-8 lg:py-3 rounded-full text-sm lg:text-base font-bold transition-all transform hover:scale-105 shadow-lg"
+              >
+                Essai gratuit
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -67,9 +75,15 @@ export default function Home() {
                   <span className="text-green-500">partout.</span>
                 </h1>
                 
-                <p className="text-gray-600 dark:text-gray-400 text-base lg:text-xl leading-relaxed mb-6 lg:mb-8 max-w-2xl lg:max-w-none">
+                <p className="text-gray-600 dark:text-gray-400 text-base lg:text-xl leading-relaxed mb-4 lg:mb-6 max-w-2xl lg:max-w-none">
                   Créez votre catalogue, partagez votre lien unique, vendez via WhatsApp.
                 </p>
+                
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6 lg:mb-8">
+                  <p className="text-green-700 dark:text-green-300 font-semibold text-center lg:text-left">
+                    ⚡ Créez votre boutique en 2 minutes
+                  </p>
+                </div>
                 
                 {/* Process Flow */}
                 <div className="flex items-center justify-center lg:justify-start gap-2 mb-8 lg:mb-10">
@@ -91,17 +105,18 @@ export default function Home() {
               <div className="space-y-3 lg:space-y-0 lg:space-x-4 lg:flex mb-8 lg:mb-0">
                 <Link 
                   href="/auth/signin"
-                  className="flex items-center justify-center gap-3 w-full lg:w-auto bg-blue-500 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-blue-600 transition-colors"
+                  className="flex items-center justify-center gap-3 w-full lg:w-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-10 py-5 rounded-2xl text-xl font-bold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
                 >
-                  <TrendingUp className="w-5 h-5" />
-                  Commencer gratuitement
+                  <TrendingUp className="w-6 h-6" />
+                  Essai gratuit
+                  <ArrowRight className="w-5 h-5" />
                 </Link>
                 <Link 
                   href="#features"
-                  className="flex items-center justify-center gap-3 w-full lg:w-auto bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-4 rounded-2xl text-base font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-center gap-3 w-full lg:w-auto bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-600 px-8 py-4 rounded-2xl text-base font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  Voir comment ça marche
+                  <Globe className="w-4 h-4" />
+                  Voir un exemple
                 </Link>
               </div>
             </div>
@@ -190,6 +205,215 @@ export default function Home() {
                 <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
                   Vos clients commandent directement via WhatsApp avec message pré-rempli. Simple et efficace !
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Countries Social Proof */}
+          <div className="mt-16 lg:mt-24">
+            <div className="text-center mb-8">
+              <h2 className="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+                Disponible dans toute l'Afrique
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Rejoignez les vendeurs de ces pays qui utilisent déjà ShopShap
+              </p>
+            </div>
+            
+            <div className="relative overflow-hidden">
+              {/* First row - moving right */}
+              <div className="flex animate-scroll-right mb-4">
+                <div className="flex gap-6 whitespace-nowrap">
+                  {/* First set */}
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇸🇳</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sénégal</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇨🇮</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Côte d'Ivoire</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇲🇦</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Maroc</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇹🇳</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tunisie</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇳🇬</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Nigeria</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇬🇭</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ghana</span>
+                  </div>
+                  {/* Duplicate set for seamless loop */}
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇸🇳</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sénégal</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇨🇮</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Côte d'Ivoire</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇲🇦</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Maroc</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇹🇳</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tunisie</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇳🇬</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Nigeria</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇬🇭</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ghana</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Second row - moving left */}
+              <div className="flex animate-scroll-left">
+                <div className="flex gap-6 whitespace-nowrap">
+                  {/* First set */}
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇰🇪</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Kenya</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇪🇹</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Éthiopie</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇿🇦</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Afrique du Sud</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇨🇲</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cameroun</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇲🇱</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Mali</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇧🇫</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Burkina Faso</span>
+                  </div>
+                  {/* Duplicate set for seamless loop */}
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇰🇪</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Kenya</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇪🇹</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Éthiopie</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇿🇦</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Afrique du Sud</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇨🇲</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cameroun</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇲🇱</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Mali</span>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <span className="text-2xl">🇧🇫</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Burkina Faso</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Section */}
+          <div id="pricing" className="mt-16 lg:mt-24">
+            <div className="bg-gradient-to-br from-green-50 via-blue-50 to-orange-50 dark:from-green-950/30 dark:via-blue-950/30 dark:to-orange-950/30 rounded-3xl p-8 lg:p-12">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 px-4 py-2 rounded-full mb-6">
+                  <Sparkles className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-300">100% Gratuit à vie</span>
+                </div>
+                
+                <h2 className="text-2xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                  Prêt à <span className="text-green-500">transformer</span> vos ventes ?
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 text-lg lg:text-xl max-w-3xl mx-auto mb-8">
+                  Rejoignez les vendeurs qui font confiance à ShopShap pour développer leur business
+                </p>
+              </div>
+
+              {/* Stats/Benefits Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">Ventes simplifiées</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Transformez vos visiteurs en clients avec WhatsApp</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">2 minutes</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Pour créer votre boutique et commencer à vendre</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Gift className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">0€ pour toujours</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Aucun frais caché, aucune limite de temps</p>
+                </div>
+              </div>
+
+              {/* Main CTA */}
+              <div className="text-center">
+                <Link 
+                  href="/auth/signin"
+                  className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 lg:px-12 py-4 lg:py-5 rounded-2xl text-lg lg:text-xl font-bold transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl mb-6"
+                >
+                  <TrendingUp className="w-6 h-6" />
+                  Créer ma boutique maintenant
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                
+                <div className="flex items-center justify-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Aucune carte requise
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Configuration instantanée
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    Support inclus
+                  </span>
+                </div>
+              </div>
+
+              {/* Future features teaser */}
+              <div className="mt-10 pt-8 border-t border-gray-200 dark:border-gray-700 text-center">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Zap className="w-4 h-4 text-blue-500" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Prochainement : réponses automatiques aux questions, liens de paiement, analytiques avancées
+                  </p>
+                </div>
               </div>
             </div>
           </div>

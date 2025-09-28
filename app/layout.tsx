@@ -13,6 +13,19 @@ export const metadata: Metadata = {
   title: "ShopShap - Créez votre boutique en ligne en Afrique",
   description: "Transformez vos ventes TikTok et WhatsApp en boutique professionnelle. Créez votre catalogue et vendez directement via WhatsApp.",
   keywords: "e-commerce, Afrique, boutique en ligne, WhatsApp, TikTok, catalogue",
+  manifest: "/manifest.json",
+  themeColor: "#22c55e",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ShopShap",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
