@@ -1,43 +1,54 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+
+// Client admin pour vérifications serveur
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams, origin, hash } = new URL(request.url)
+    const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-    const next = searchParams.get('next') ?? '/dashboard'
 
-    console.log('🔄 Callback reçu')
-    console.log('Code:', code ? '✅' : '❌')
-    console.log('Hash:', hash || 'Aucun')
-    console.log('URL complète:', request.url)
+    console.log('🔄 OAuth Callback - Code:', !!code)
 
-    // Vérifier si on a des tokens dans l'URL (mode implicit flow)
-    if (request.url.includes('access_token=')) {
-      console.log('🎯 Tokens détectés dans l\'URL - redirection vers signin pour traitement')
-      // Rediriger vers signin avec les tokens pour que le client les traite et décide de la redirection
-      const urlWithTokens = request.url.replace('/auth/callback', '/auth/signin')
-      return NextResponse.redirect(urlWithTokens)
+    if (!code) {
+      console.log('❌ Pas de code OAuth')
+      return NextResponse.redirect(`${origin}/auth/auth-code-error`)
     }
 
-    if (code) {
-      console.log('🔑 Échange du code pour une session...')
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-      
-      if (error) {
-        console.error('❌ Erreur lors de l\'échange:', error)
-        return NextResponse.redirect(`${origin}/auth/auth-code-error`)
-      }
-
-      console.log('✅ Session créée avec succès:', data.user?.email)
-      return NextResponse.redirect(`${origin}${next}`)
-    }
-
-    console.log('❌ Ni code ni tokens trouvés')
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    // Échanger le code pour une session
+    const { data, error } = await supabaseAdmin.auth.exchangeCodeForSession(code)
     
+    if (error || !data.user) {
+      console.error('❌ Erreur échange code:', error)
+      return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    }
+
+    console.log('✅ Session créée pour:', data.user.email)
+    
+    // Vérifier l'état du profil utilisateur
+    const { data: vendeur, error: vendeurError } = await supabaseAdmin
+      .from('vendeurs')
+      .select('id')
+      .eq('user_id', data.user.id)
+      .single()
+    
+    // Décision de redirection basée sur l'état
+    if (vendeurError?.code === 'PGRST116' || !vendeur) {
+      // Nouveau utilisateur - pas de profil vendeur
+      console.log('👤 Nouveau utilisateur → onboarding')
+      return NextResponse.redirect(`${origin}/onboarding`)
+    }
+    
+    // Utilisateur avec profil vendeur → dashboard directement
+    console.log('🏪 Utilisateur avec profil → dashboard')
+    return NextResponse.redirect(`${origin}/dashboard`)
+
   } catch (error) {
-    console.error('💥 Erreur dans le callback:', error)
+    console.error('💥 Erreur callback:', error)
     return NextResponse.redirect(`${request.nextUrl.origin}/auth/auth-code-error`)
   }
 }

@@ -7,6 +7,9 @@ CREATE TABLE vendeurs (
     nom_boutique TEXT NOT NULL,
     devise TEXT NOT NULL DEFAULT 'XOF',
     whatsapp TEXT NOT NULL,
+    whatsapp_verified BOOLEAN DEFAULT FALSE,
+    verification_code TEXT,
+    verification_expires_at TIMESTAMP WITH TIME ZONE,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

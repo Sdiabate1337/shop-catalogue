@@ -12,63 +12,44 @@ export default function AuthCodeError() {
   const router = useRouter()
 
   useEffect(() => {
-    const handleTokensInUrl = async () => {
-      console.log('🔍 Page d\'erreur chargée, vérification des tokens...')
-      console.log('Hash actuel:', window.location.hash)
-      
-      // Vérifier si on a des tokens dans l'URL fragment
+    const handleImplicitFlow = async () => {
+      // Vérifier si on a des tokens dans l'URL fragment (flow implicit)
       if (window.location.hash.includes('access_token=')) {
-        console.log('🎯 Tokens détectés dans la page d\'erreur - tentative de récupération de session')
+        console.log('🔄 Tokens OAuth détectés - traitement du flow implicit')
         
         try {
-          // Attendre un peu pour que Supabase traite les tokens
-          console.log('⏳ Attente de 2 secondes pour le traitement des tokens...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          
           // Supabase détecte automatiquement les tokens dans l'URL
           const { data: { session }, error } = await supabase.auth.getSession()
           
-          console.log('📡 Réponse getSession:', { session: session?.user?.email, error })
-          
           if (session && !error) {
-            console.log('✅ Session récupérée avec succès:', session.user.email)
-            console.log('🔄 Redirection vers dashboard...')
-            router.push('/dashboard')
+            console.log('✅ Session créée:', session.user.email)
+            
+            // Vérifier l'état du profil utilisateur par user_id (email)
+            const { data: vendeur, error: vendeurError } = await supabase
+              .from('vendeurs')
+              .select('id')
+              .eq('user_id', session.user.id)
+              .single()
+            
+            // Redirection selon l'état
+            if (vendeurError?.code === 'PGRST116' || !vendeur) {
+              console.log('👤 Nouveau utilisateur → onboarding')
+              router.push('/onboarding')
+            } else {
+              console.log('🏪 Utilisateur avec profil → dashboard')
+              router.push('/dashboard')
+            }
             return
           }
           
-          console.log('❌ Impossible de récupérer la session:', error)
-          
-          // Essayer de forcer la session avec setSession
-          console.log('🔄 Tentative de création manuelle de session...')
-          const hashParams = new URLSearchParams(window.location.hash.substring(1))
-          const accessToken = hashParams.get('access_token')
-          const refreshToken = hashParams.get('refresh_token')
-          
-          if (accessToken && refreshToken) {
-            const { data, error: setError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            })
-            
-            console.log('📡 Réponse setSession:', { user: data.user?.email, error: setError })
-            
-            if (data.session && !setError) {
-              console.log('✅ Session créée manuellement avec succès')
-              router.push('/dashboard')
-              return
-            }
-          }
-          
+          console.log('❌ Erreur session:', error)
         } catch (error) {
-          console.error('💥 Erreur lors de la récupération de session:', error)
+          console.error('💥 Erreur traitement tokens:', error)
         }
-      } else {
-        console.log('❌ Aucun token détecté dans l\'URL')
       }
     }
 
-    handleTokensInUrl()
+    handleImplicitFlow()
   }, [router])
 
   return (

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingBag, Sparkles, Store, Globe, Smartphone, TrendingUp } from "@/components/icons";
+import { ShoppingBag, Sparkles, Store, Globe, Smartphone, TrendingUp, Info } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const supabase = createClient();
@@ -56,6 +56,20 @@ export default function Onboarding() {
       console.log('📝 Données du formulaire:', formData)
       console.log('🏷️ Slug généré:', slug)
 
+      // Vérifier si l'utilisateur a déjà une boutique (unicité par email pour v1)
+      console.log('🔍 Vérification boutique existante...')
+      const { data: existingVendeur, error: existingError } = await supabase
+        .from('vendeurs')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (existingVendeur && !existingError) {
+        console.log('⚠️ Boutique déjà existante pour cet utilisateur')
+        router.push('/dashboard')
+        return
+      }
+
       // Créer le vendeur
       console.log('👤 Création du vendeur...')
       const vendeurResponse = await supabase
@@ -73,6 +87,12 @@ export default function Onboarding() {
 
       if (vendeurResponse.error) {
         console.error('❌ Erreur vendeur:', vendeurResponse.error)
+        // Si erreur d'unicité, rediriger vers dashboard
+        if (vendeurResponse.error.code === '23505') {
+          console.log('⚠️ Boutique déjà créée (contrainte unicité)')
+          router.push('/dashboard')
+          return
+        }
         throw vendeurResponse.error
       }
 
@@ -101,6 +121,26 @@ export default function Onboarding() {
 
       console.log('✅ Catalogue créé:', catalogueResponse.data)
 
+      // Vérifier que le vendeur existe bien avant redirection
+      console.log('🔍 Vérification existence vendeur avant redirection...')
+      const { data: vendeurCheck, error: vendeurCheckError } = await supabase
+        .from('vendeurs')
+        .select('*')
+        .eq('id', vendeur.id)
+        .single()
+      
+      console.log('📋 Vérification vendeur:', { vendeurCheck, vendeurCheckError })
+      
+      if (vendeurCheckError || !vendeurCheck) {
+        console.error('❌ Vendeur non trouvé après création !', { vendeurId: vendeur.id, vendeurCheckError })
+        throw new Error('Erreur de synchronisation base de données')
+      }
+      
+      // Attendre un peu pour s'assurer que la transaction est commitée
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Rediriger directement vers le dashboard
+      console.log('🚀 Redirection vers dashboard')
       router.push('/dashboard')
     } catch (error: any) {
       console.error('Erreur lors de la création:', error)
@@ -201,8 +241,9 @@ export default function Onboarding() {
                 required
               />
               <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-2xl">
-                <p className="text-xs text-green-700 dark:text-green-300">
-                  ℹ️ Format international avec indicatif pays (ex: +221 pour Sénégal)
+                <p className="text-xs text-green-700 dark:text-green-300 flex items-center gap-2">
+                  <Info className="w-3 h-3" />
+                  Format international avec indicatif pays (ex: +221 pour Sénégal)
                 </p>
               </div>
             </div>

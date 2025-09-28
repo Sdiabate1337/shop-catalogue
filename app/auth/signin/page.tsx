@@ -35,20 +35,9 @@ export default function SignIn() {
       if (session) {
         console.log('✅ Session créée:', session.user.email)
         
-        // Vérifier si l'utilisateur existe dans la base
-        const { data: vendeur, error: vendeurError } = await supabase
-          .from('vendeurs')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-        
-        if (vendeurError || !vendeur) {
-          console.log('👤 Nouvel utilisateur - redirection vers onboarding')
-          window.location.href = '/onboarding'
-        } else {
-          console.log('🏪 Utilisateur existant - redirection vers dashboard')
-          window.location.href = '/dashboard'
-        }
+        // La vérification du profil vendeur est maintenant faite côté serveur dans /auth/callback
+        // Ici on nettoie juste l'URL et laisse le serveur gérer la redirection
+        console.log('✅ Session établie, redirection gérée par le serveur')
         
         // Nettoyer l'URL
         window.history.replaceState({}, document.title, '/auth/signin')

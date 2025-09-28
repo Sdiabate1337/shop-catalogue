@@ -40,6 +40,9 @@ export type Database = {
           whatsapp: string
           user_id: string
           created_at: string
+          whatsapp_verified?: boolean
+          verification_code?: string
+          verification_expires_at?: string
         }
         Insert: {
           id?: string
@@ -48,6 +51,9 @@ export type Database = {
           whatsapp: string
           user_id: string
           created_at?: string
+          whatsapp_verified?: boolean
+          verification_code?: string
+          verification_expires_at?: string
         }
         Update: {
           id?: string
@@ -56,6 +62,9 @@ export type Database = {
           whatsapp?: string
           user_id?: string
           created_at?: string
+          whatsapp_verified?: boolean
+          verification_code?: string
+          verification_expires_at?: string
         }
       }
       catalogues: {
