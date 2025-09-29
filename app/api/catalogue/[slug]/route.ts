@@ -9,10 +9,10 @@ const supabaseAdmin = createClient(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = params
+    const { slug } = await params
 
     // Récupérer le catalogue avec le vendeur
     const { data: catalogue, error: catalogueError } = await supabaseAdmin

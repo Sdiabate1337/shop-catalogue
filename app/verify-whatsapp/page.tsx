@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Smartphone, Shield, Clock, RefreshCw, AlertTriangle } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 
-export default function VerifyWhatsApp() {
+function VerifyWhatsAppContent() {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
@@ -255,5 +255,20 @@ export default function VerifyWhatsApp() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerifyWhatsApp() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-blue-100 via-slate-50 to-orange-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <VerifyWhatsAppContent />
+    </Suspense>
   )
 }
